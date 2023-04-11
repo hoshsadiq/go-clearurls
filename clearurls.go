@@ -28,7 +28,14 @@ func (p *pattern) re() *regexp.Regexp {
 }
 
 func (p *pattern) UnmarshalJSON(bytes []byte) error {
-	return json.Unmarshal(bytes, &p.pattern)
+	err := json.Unmarshal(bytes, &p.pattern)
+	if err != nil {
+		return err
+	}
+
+	p.pattern = "(?i)" + p.pattern
+
+	return nil
 }
 
 type Provider struct {
@@ -129,8 +136,8 @@ func (c *URLCleaner) cleanQuery(qs url.Values, provider Provider) url.Values {
 	rules := append(provider.Rules, provider.ReferralMarketing...)
 
 	for _, qp := range rules {
-		for k, _ := range qs {
-			if qp.re().Match([]byte(k)) {
+		for k := range qs {
+			if qp.re().MatchString(k) {
 				qs.Del(k)
 			}
 		}
